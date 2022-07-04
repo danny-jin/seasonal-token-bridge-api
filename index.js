@@ -28,20 +28,36 @@ const etherSpring = new etherWeb3.eth.Contract(springABI, etherSpringAddr);
 const bscSpringAddr = process.env.BSC_SPRING_TOKEN;
 const bscSpring = new bscWeb3.eth.Contract(springABI, bscSpringAddr);
 
+const ETHUnit = 1000000000000000000;
+
 async function bscFinalizeSwap(result){
   const token = result.token;
   const amount = result.amount;
   switch(token){
     case etherSpringAddr:
-
+      console.log("BSCBridge address is ", bscBridgeAddress);
+      const data = await bscSpring.methods.mint(bscBridgeAddress, amount);
+      const encodedABI = data.encodeABI();
+      const signedTx = await bscWeb3.eth.accounts.signTransaction(
+        {
+            from: bscBridgeAddress,
+            to: myAccount,
+            data: encodedABI,
+            nonce: '0x00',
+            gasPrice: '0x09184e72a000', 
+            gasLimit: '0x1086A0',
+            value: '0x71AFD498D0000',
+        },
+        pvKey
+      );
+      try {
+          const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
+          console.log(success);
+      } catch (e) {
+          console.log(e);
+      }
       break;
   }
-  let user_addr = "dummy addr"
-  let user_cash = "dummy cash"
-  let userInfo = [user_addr, user_cash];
-  let payment_user = web3.utils.toHex(userInfo);
-  console.log(payment_user);
-
   // let signedTx = await bscWeb3.eth.accounts.signTransaction(
   //     {
   //         from: bscBridgeAddress,
@@ -81,10 +97,9 @@ async function etherFinalizeSwap(tokenAddr, amount){
     }
 }
 
-etherBridge.events.SwappedFromEth({
-  filter: {tokenAddr: etherSpringAddr}})
+etherBridge.events.SwappedFromEth()
   .on('data', function(event){
-    console.log('event: ', event);
+    // console.log('event: ', event);
     bscFinalizeSwap(event.returnValues);
   })
   .on('error', console.error);
