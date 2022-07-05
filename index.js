@@ -7,6 +7,9 @@ const Web3 = require('web3');
 const ethBridgeABI = require('./abi/ethBridgeABI.json');
 const bscBridgeABI = require('./abi/bscBridgeABI.json');
 const springABI = require('./abi/springABI.json');
+const summerABI = require('./abi/summerABI.json');
+const autumnABI = require('./abi/autumnABI.json');
+const winterABI = require('./abi/winterABI.json');
 
 const etherProvider = new Web3.providers.WebsocketProvider(process.env.ETHER_RPC);
 const bscProvider = new Web3.providers.WebsocketProvider(process.env.BSC_RPC);
@@ -24,8 +27,19 @@ const bscBridge = new bscWeb3.eth.Contract(bscBridgeABI, bscBridgeAddress);
 
 // Season contract
 const etherSpringAddr = process.env.ETHER_SPRING_TOKEN;
+const etherSummerAddr = process.env.ETHER_SUMMER_TOKEN;
+const etherAutumnAddr = process.env.ETHER_AUTUMN_TOKEN;
+const etherWinterAddr = process.env.ETHER_WINTER_TOKEN;
+
 const bscSpringAddr = process.env.BSC_SPRING_TOKEN;
+const bscSummerAddr = process.env.BSC_SUMMER_TOKEN;
+const bscAutumnAddr = process.env.BSC_AUTUMN_TOKEN;
+const bscWinterAddr = process.env.BSC_WINTER_TOKEN;
+
 const bscSpring = new bscWeb3.eth.Contract(springABI, bscSpringAddr);
+const bscSummer = new bscWeb3.eth.Contract(summerABI, bscSummerAddr);
+const bscAutumn = new bscWeb3.eth.Contract(autumnABI, bscAutumnAddr);
+const bscWinter = new bscWeb3.eth.Contract(winterABI, bscWinterAddr);
 
 async function bscFinalizeSwap(result){
   const token = result.token;
@@ -40,15 +54,21 @@ async function bscFinalizeSwap(result){
         bscSeasonAddr = bscSpringAddr;
         console.log("Swapping Spring Token");
       break;
-    // case etherSpringAddr:
-    //   bscSeason = bscSpring;
-    //   break;
-    // case etherSpringAddr:
-    //   bscSeason = bscSpring;
-    //   break;
-    // case etherSpringAddr:
-    //   bscSeason = bscSpring;
-    //   break;
+    case etherSummerAddr:
+      bscSeason = bscSummer;
+      bscSeasonAddr = bscSummerAddr;
+      console.log("Swapping Summer Token");
+      break;
+    case etherAutumnAddr:
+      bscSeason = bscAutumn;
+      bscSeasonAddr = bscAutumnAddr;
+      console.log("Swapping Autumn Token");
+      break;
+    case etherWinterAddr:
+      bscSeason = bscWinter;
+      bscSeasonAddr = bscWinterAddr;
+      console.log("Swapping Winter Token");
+      break;
   }
   const data = await bscSeason.methods.mint(fromWallet, amount);
   const encodedABI = data.encodeABI();
@@ -79,16 +99,20 @@ async function etherFinalizeSwap(result){
   switch(token){
     case bscSpringAddr:
       etherSeasonAddr = etherSpringAddr;
+      console.log("Swapping Spring Token");
       break;
-    // case bscSpringAddr:
-    //   etherSeasonAddr = etherSpringAddr;
-    //   break;
-    // case bscSpringAddr:
-    //   etherSeasonAddr = etherSpringAddr;
-    //   break;
-    // case bscSpringAddr:
-    //   etherSeasonAddr = etherSpringAddr;
-    //   break;
+    case bscSummerAddr:
+      etherSeasonAddr = etherSummerAddr;
+      console.log("Swapping Summer Token");
+      break;
+    case bscAutumnAddr:
+      etherSeasonAddr = etherAutumnAddr;
+      console.log("Swapping Autumn Token");
+      break;
+    case bscWinterAddr:
+      etherSeasonAddr = etherWinterAddr;
+      console.log("Swapping Winter Token");
+      break;
   }
   const data = await etherBridge.methods.acceptSwapFromBsc(fromWallet, etherSeasonAddr, amount);
   const encodedABI = data.encodeABI();
