@@ -24,7 +24,6 @@ const bscBridge = new bscWeb3.eth.Contract(bscBridgeABI, bscBridgeAddress);
 
 // Season contract
 const etherSpringAddr = process.env.ETHER_SPRING_TOKEN;
-const etherSpring = new etherWeb3.eth.Contract(springABI, etherSpringAddr);
 const bscSpringAddr = process.env.BSC_SPRING_TOKEN;
 const bscSpring = new bscWeb3.eth.Contract(springABI, bscSpringAddr);
 
@@ -32,74 +31,98 @@ async function bscFinalizeSwap(result){
   const token = result.token;
   const amount = result.amount;
   const fromWallet = result.from;
+  console.log("From : ", fromWallet);
+  let bscSeason;
+  let bscSeasonAddr;
   switch(token){
     case etherSpringAddr:
-      // console.log("estimate", await bscWeb3.eth.estimateGas({from: myAccount, to: bscBridgeAddress, amount: 1112312321}));
-      const data = await bscSpring.methods.mint(fromWallet, amount);
-      const encodedABI = data.encodeABI();
-      const signedTx = await bscWeb3.eth.accounts.signTransaction(
-        {
-            from: myAccount, 
-            to: bscSpringAddr, 
-            data: encodedABI,
-            gas: 100000,
-            value: 0,
-        },
-        pvKey
-      );
-      console.log("Transaction started");
-      try {
-          const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
-          console.log(success);
-      } catch (e) {
-          console.log(e);
-      }
+        bscSeason = bscSpring;
+        bscSeasonAddr = bscSpringAddr;
+        console.log("Swapping Spring Token");
       break;
+    // case etherSpringAddr:
+    //   bscSeason = bscSpring;
+    //   break;
+    // case etherSpringAddr:
+    //   bscSeason = bscSpring;
+    //   break;
+    // case etherSpringAddr:
+    //   bscSeason = bscSpring;
+    //   break;
+  }
+  const data = await bscSeason.methods.mint(fromWallet, amount);
+  const encodedABI = data.encodeABI();
+  const signedTx = await bscWeb3.eth.accounts.signTransaction(
+    {
+        from: myAccount, 
+        to: bscSeasonAddr, 
+        data: encodedABI,
+        gas: 100000,
+        value: 0,
+    },
+    pvKey
+  );
+  try {
+      const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log("Finished");
+  } catch (e) {
+      console.log(e);
   }
 }
 
-async function etherFinalizeSwap(tokenAddr, amount){
-  lconst token = result.token;
+async function etherFinalizeSwap(result){
+  const token = result.token;
   const amount = result.amount;
   const fromWallet = result.from;
+  console.log("From : ", fromWallet);
+  let etherSeasonAddr;
   switch(token){
-    case etherSpringAddr:
-      // console.log("estimate", await bscWeb3.eth.estimateGas({from: myAccount, to: bscBridgeAddress, amount: 1112312321}));
-      const data = await bscSpring.methods.mint(fromWallet, amount);
-      const encodedABI = data.encodeABI();
-      const signedTx = await bscWeb3.eth.accounts.signTransaction(
-        {
-            from: myAccount, 
-            to: bscSpringAddr, 
-            data: encodedABI,
-            gas: 100000,
-            value: 0,
-        },
-        pvKey
-      );
-      console.log("Transaction started");
-      try {
-          const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
-          console.log(success);
-      } catch (e) {
-          console.log(e);
-      }
+    case bscSpringAddr:
+      etherSeasonAddr = etherSpringAddr;
       break;
+    // case bscSpringAddr:
+    //   etherSeasonAddr = etherSpringAddr;
+    //   break;
+    // case bscSpringAddr:
+    //   etherSeasonAddr = etherSpringAddr;
+    //   break;
+    // case bscSpringAddr:
+    //   etherSeasonAddr = etherSpringAddr;
+    //   break;
+  }
+  const data = await etherBridge.methods.acceptSwapFromBsc(fromWallet, etherSeasonAddr, amount);
+  const encodedABI = data.encodeABI();
+  const signedTx = await etherWeb3.eth.accounts.signTransaction(
+    {
+        from: myAccount, 
+        to: etherSeasonAddr, 
+        data: encodedABI,
+        gas: 100000,
+        value: 0,
+    },
+    pvKey
+  );
+  console.log("Transfer EtherSprint to Account");
+  try {
+      const success = await etherWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log("Finished");
+  } catch (e) {
+      console.log(e);
   }
 }
 
 etherBridge.events.SwappedFromEth({
   filter: {tokenAddr: etherSpringAddr}})
   .on('data', function(event){
-    console.log('event: ', event.returnValues);
+    console.log('event: Swap from ETH');
     bscFinalizeSwap(event.returnValues);
   })
   .on('error', console.error);
 
 bscBridge.events.SwappedFromBsc()
   .on('data', function(event){
-    console.log('event: ', event);
-    etherFinalizeSwap(etherTokenAddr, event.returnValues.amount);
+    console.log('event: Swap from BSC');
+    etherFinalizeSwap(event.returnValues);
   })
   .on('error', console.error);
 
