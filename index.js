@@ -28,28 +28,26 @@ const etherSpring = new etherWeb3.eth.Contract(springABI, etherSpringAddr);
 const bscSpringAddr = process.env.BSC_SPRING_TOKEN;
 const bscSpring = new bscWeb3.eth.Contract(springABI, bscSpringAddr);
 
-const ETHUnit = 1000000000000000000;
-
 async function bscFinalizeSwap(result){
   const token = result.token;
   const amount = result.amount;
+  const fromWallet = result.from;
   switch(token){
     case etherSpringAddr:
-      console.log("BSCBridge address is ", bscBridgeAddress);
-      const data = await bscSpring.methods.mint(bscBridgeAddress, amount);
+      // console.log("estimate", await bscWeb3.eth.estimateGas({from: myAccount, to: bscBridgeAddress, amount: 1112312321}));
+      const data = await bscSpring.methods.mint(fromWallet, amount);
       const encodedABI = data.encodeABI();
       const signedTx = await bscWeb3.eth.accounts.signTransaction(
         {
-            from: bscBridgeAddress,
-            to: myAccount,
+            from: myAccount, 
+            to: bscSpringAddr, 
             data: encodedABI,
-            nonce: '0x00',
-            gasPrice: '0x09184e72a000', 
-            gasLimit: '0x1086A0',
-            value: '0x71AFD498D0000',
+            gas: 100000,
+            value: 0,
         },
         pvKey
       );
+      console.log("Transaction started");
       try {
           const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
           console.log(success);
@@ -58,48 +56,42 @@ async function bscFinalizeSwap(result){
       }
       break;
   }
-  // let signedTx = await bscWeb3.eth.accounts.signTransaction(
-  //     {
-  //         from: bscBridgeAddress,
-  //         to: myAccount,
-  //         data: encodedABI,
-  //         gas: 300000,
-  //         value: 0
-  //     },
-  //     pvKey
-  // );
-  // try {
-  //     const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
-  //     console.log(success);
-  // } catch (e) {
-  //     console.log(e);
-  // }
 }
 
 async function etherFinalizeSwap(tokenAddr, amount){
-  let data = bscBridge.methods.finalizeSwap(tokenAddr, amount);
-    let encodedABI = data.encodeABI();
-    let signedTx = await web3.eth.accounts.signTransaction(
+  lconst token = result.token;
+  const amount = result.amount;
+  const fromWallet = result.from;
+  switch(token){
+    case etherSpringAddr:
+      // console.log("estimate", await bscWeb3.eth.estimateGas({from: myAccount, to: bscBridgeAddress, amount: 1112312321}));
+      const data = await bscSpring.methods.mint(fromWallet, amount);
+      const encodedABI = data.encodeABI();
+      const signedTx = await bscWeb3.eth.accounts.signTransaction(
         {
-            from: myAccount,
-            to: bscBridgeAddress,
+            from: myAccount, 
+            to: bscSpringAddr, 
             data: encodedABI,
-            gas: 300000,
-            value: 0
+            gas: 100000,
+            value: 0,
         },
         pvKey
-    );
-    try {
-        const success = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log(success);
-    } catch (e) {
-        console.log(e);
-    }
+      );
+      console.log("Transaction started");
+      try {
+          const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
+          console.log(success);
+      } catch (e) {
+          console.log(e);
+      }
+      break;
+  }
 }
 
-etherBridge.events.SwappedFromEth()
+etherBridge.events.SwappedFromEth({
+  filter: {tokenAddr: etherSpringAddr}})
   .on('data', function(event){
-    // console.log('event: ', event);
+    console.log('event: ', event.returnValues);
     bscFinalizeSwap(event.returnValues);
   })
   .on('error', console.error);
@@ -107,7 +99,7 @@ etherBridge.events.SwappedFromEth()
 bscBridge.events.SwappedFromBsc()
   .on('data', function(event){
     console.log('event: ', event);
-    // etherFinalizeSwap(etherTokenAddr, event.returnValues.amount);
+    etherFinalizeSwap(etherTokenAddr, event.returnValues.amount);
   })
   .on('error', console.error);
 
