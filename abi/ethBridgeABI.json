@@ -168,7 +168,7 @@
     ],
     "name": "acceptSwapFromBsc",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -301,6 +301,19 @@
       }
     ],
     "name": "swapFromEth",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_minAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateMinAmount",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

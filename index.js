@@ -19,22 +19,22 @@ const bscWeb3 = new Web3(bscProvider);
 const pvKey = process.env.PRIVATE_KEY;
 const myAccount = etherWeb3.eth.accounts.privateKeyToAccount(pvKey).address;
 // bridge contract
-const etherBridgeAddress = process.env.ETHER_BRDIGE_ADDRESS;
+const etherBridgeAddress = "0x3E197a606969A8B8c1e426B3421Cf8574ac4431C";
 const etherBridge = new etherWeb3.eth.Contract(ethBridgeABI, etherBridgeAddress);
 
-const bscBridgeAddress = process.env.BSC_BRDIGE_ADDRESS;
+const bscBridgeAddress = "0x15472FDC8799FC851B1eE0e6604190F475Fd707b";
 const bscBridge = new bscWeb3.eth.Contract(bscBridgeABI, bscBridgeAddress);
 
 // Season contract
-const etherSpringAddr = process.env.ETHER_SPRING_TOKEN;
-const etherSummerAddr = process.env.ETHER_SUMMER_TOKEN;
-const etherAutumnAddr = process.env.ETHER_AUTUMN_TOKEN;
-const etherWinterAddr = process.env.ETHER_WINTER_TOKEN;
+const etherSpringAddr = "0x2eC6D1d29E0F0C34Ae63b06670EbcC5eF3725e92";
+const etherSummerAddr = "0xffE9541a416700fe70A404bcCf3Ae444388A36E1";
+const etherAutumnAddr = "0x8E05426A0c272D8963761F1Bcf947d06D51F2C3F";
+const etherWinterAddr = "0xCd090BB2444bb039878a769F62965F6FA268b178";
 
-const bscSpringAddr = process.env.BSC_SPRING_TOKEN;
-const bscSummerAddr = process.env.BSC_SUMMER_TOKEN;
-const bscAutumnAddr = process.env.BSC_AUTUMN_TOKEN;
-const bscWinterAddr = process.env.BSC_WINTER_TOKEN;
+const bscSpringAddr = "0x79BE19FF38cB4EB83D0A1B0D1Fa6eCE81df0D9e1";
+const bscSummerAddr = "0x51E5e7504B9349De3d8529F087aea8b0A5f5bdF4";
+const bscAutumnAddr = "0x53Ce052eA436C554f11c1dD92970A7C64A86fb52";
+const bscWinterAddr = "0x21a7e1CdcEe222e91E34633b9fdEdbeAA4b301DB";
 
 const bscSpring = new bscWeb3.eth.Contract(springABI, bscSpringAddr);
 const bscSummer = new bscWeb3.eth.Contract(summerABI, bscSummerAddr);
