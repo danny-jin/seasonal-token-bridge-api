@@ -3,13 +3,37 @@ const app = express();
 
 const env = require("dotenv").config();
 const Web3 = require('web3');
+const cors = require("cors");
+const socket = require("socket.io");
+
+app.use(express());
+app.use(cors());
+
+const port = parseInt(process.env.PORT || 3000);
+var server = app.listen(port, ()=> {
+  console.log(`Server running on port ${port}`);
+});
+const io = socket(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+io.on("connection", (socket) => {
+  //for a new user joining the room
+  socket.on('Start project', () => {
+    console.log('Launch start project');
+  });
+  socket.on('SwapFromEth', () => {
+    console.log('Receive SwapFromEth event.');
+    socket.emit('received');
+  });
+});
+
 // const bridgeABI = require('./abi/bridgeABI.json');
 const ethBridgeABI = require('./abi/ethBridgeABI.json');
 const bscBridgeABI = require('./abi/bscBridgeABI.json');
-const springABI = require('./abi/springABI.json');
-const summerABI = require('./abi/summerABI.json');
-const autumnABI = require('./abi/autumnABI.json');
-const winterABI = require('./abi/winterABI.json');
+const seasonalABI = require('./abi/springABI.json');
 
 const etherProvider = new Web3.providers.WebsocketProvider(process.env.ETHER_RPC);
 const bscProvider = new Web3.providers.WebsocketProvider(process.env.BSC_RPC);
@@ -19,27 +43,27 @@ const bscWeb3 = new Web3(bscProvider);
 const pvKey = process.env.PRIVATE_KEY;
 const myAccount = etherWeb3.eth.accounts.privateKeyToAccount(pvKey).address;
 // bridge contract
-const etherBridgeAddress = "0x3E197a606969A8B8c1e426B3421Cf8574ac4431C";
+const etherBridgeAddress = "0xEf3B7C80d2aAaC5Ed2689Bd0D35A5e69b93D4b9E";
 const etherBridge = new etherWeb3.eth.Contract(ethBridgeABI, etherBridgeAddress);
 
-const bscBridgeAddress = "0x15472FDC8799FC851B1eE0e6604190F475Fd707b";
+const bscBridgeAddress = "0x68C41083cE39b48Eb06a824A28336Cdb21A795DD";
 const bscBridge = new bscWeb3.eth.Contract(bscBridgeABI, bscBridgeAddress);
 
 // Season contract
-const etherSpringAddr = "0x2eC6D1d29E0F0C34Ae63b06670EbcC5eF3725e92";
-const etherSummerAddr = "0xffE9541a416700fe70A404bcCf3Ae444388A36E1";
-const etherAutumnAddr = "0x8E05426A0c272D8963761F1Bcf947d06D51F2C3F";
-const etherWinterAddr = "0xCd090BB2444bb039878a769F62965F6FA268b178";
+const etherSpringAddr = "0xaa3648E6533028F422dc514b5EDe8Fb9171Bf8f2";
+const etherSummerAddr = "0x37eeB07454332dC47cEE7D91e9DcB51D19317806";
+const etherAutumnAddr = "0x18349631F5F39CdbcEd344a1EB8cE20A1C884EBB";
+const etherWinterAddr = "0x40e076f7E6757e8bdb6BdF4d8512404A56039a64";
 
-const bscSpringAddr = "0x79BE19FF38cB4EB83D0A1B0D1Fa6eCE81df0D9e1";
-const bscSummerAddr = "0x51E5e7504B9349De3d8529F087aea8b0A5f5bdF4";
-const bscAutumnAddr = "0x53Ce052eA436C554f11c1dD92970A7C64A86fb52";
-const bscWinterAddr = "0x21a7e1CdcEe222e91E34633b9fdEdbeAA4b301DB";
+const bscSpringAddr = "0xe9ec6407f99b54b29D43B74ed286503c9Effd60F";
+const bscSummerAddr = "0x02DF25f221C38987A628fc9F3F8059c0C5B204E0";
+const bscAutumnAddr = "0xfACb7C553468AFDAA2000B237688d3271E538725";
+const bscWinterAddr = "0x4D44480F157DE93027E8c7dC26836aFeeEDDC946";
 
-const bscSpring = new bscWeb3.eth.Contract(springABI, bscSpringAddr);
-const bscSummer = new bscWeb3.eth.Contract(summerABI, bscSummerAddr);
-const bscAutumn = new bscWeb3.eth.Contract(autumnABI, bscAutumnAddr);
-const bscWinter = new bscWeb3.eth.Contract(winterABI, bscWinterAddr);
+const bscSpring = new bscWeb3.eth.Contract(seasonalABI, bscSpringAddr);
+const bscSummer = new bscWeb3.eth.Contract(seasonalABI, bscSummerAddr);
+const bscAutumn = new bscWeb3.eth.Contract(seasonalABI, bscAutumnAddr);
+const bscWinter = new bscWeb3.eth.Contract(seasonalABI, bscWinterAddr);
 
 async function bscFinalizeSwap(result){
   const token = result.token;
@@ -85,9 +109,12 @@ async function bscFinalizeSwap(result){
   try {
       const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
       console.log("Finished");
+      io.emit('Swap Finished');
   } catch (e) {
       console.log(e);
+      io.emit('erro',{e});
   }
+
 }
 
 async function etherFinalizeSwap(result){
@@ -96,7 +123,7 @@ async function etherFinalizeSwap(result){
   const fromWallet = result.from;
   console.log("From : ", fromWallet);
   let etherSeasonAddr;
-  switch(token){
+  switch(token) {
     case bscSpringAddr:
       etherSeasonAddr = etherSpringAddr;
       console.log("Swapping Spring Token");
@@ -118,20 +145,21 @@ async function etherFinalizeSwap(result){
   const encodedABI = data.encodeABI();
   const signedTx = await etherWeb3.eth.accounts.signTransaction(
     {
-        from: myAccount, 
-        to: etherSeasonAddr, 
+        from: myAccount,
+        to: etherBridgeAddress,
         data: encodedABI,
         gas: 100000,
         value: 0,
     },
     pvKey
   );
-  console.log("Transfer EtherSprint to Account");
   try {
       const success = await etherWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
       console.log("Finished");
+      io.emit('Swap Finished');
   } catch (e) {
       console.log(e);
+      io.emit('erro', e);
   }
 }
 
@@ -146,14 +174,14 @@ etherBridge.events.SwappedFromEth({
 bscBridge.events.SwappedFromBsc()
   .on('data', function(event){
     console.log('event: Swap from BSC');
+    // console.log(event);
     etherFinalizeSwap(event.returnValues);
   })
   .on('error', console.error);
 
 
 
-const port = parseInt(process.env.PORT || 3000);
 
-app.listen(port, ()=> {
-  console.log(`Server running on port ${port}`);
-});
+// app.get('/ws', (req, res) => {
+//   res.send('Hello World!')
+// })
