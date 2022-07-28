@@ -6,37 +6,6 @@ const Web3 = require('web3');
 const cors = require("cors");
 const socket = require("socket.io");
 
-app.use(express());
-app.use(cors());
-
-const port = parseInt(process.env.PORT || 3000);
-const server = app.listen(port, ()=> {
-  console.log(`Server running on port ${port}`);
-});
-
-let webSocket = null;
-try {
-  webSocket = socket(server, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST']
-    }
-  });
-  webSocket.on("connection", (socket) => {
-    //for a new user joining the room
-    socket.on('Start project', () => {
-      console.log('Launch start project');
-    });
-    socket.on('SwapFromEth', () => {
-      console.log('Receive SwapFromEth event.');
-      socket.emit('received');
-    });
-  });
-} catch(e) {
-  console.log(e);
-}
-
-
 // const bridgeABI = require('./abi/bridgeABI.json');
 const ethBridgeABI = require('./abi/ethBridgeABI.json');
 const bscBridgeABI = require('./abi/bscBridgeABI.json');
@@ -45,13 +14,13 @@ const seasonalABI = require('./abi/springABI.json');
 const etherProvider = new Web3.providers.WebsocketProvider(process.env.ETHER_RPC);
 const bscProvider = new Web3.providers.WebsocketProvider(process.env.BSC_RPC);
 
-const etherWeb3 = new Web3(etherProvider);
+const ethWeb3 = new Web3(etherProvider);
 const bscWeb3 = new Web3(bscProvider);
 const pvKey = process.env.PRIVATE_KEY;
-const myAccount = etherWeb3.eth.accounts.privateKeyToAccount(pvKey).address;
+const myAccount = ethWeb3.eth.accounts.privateKeyToAccount(pvKey).address;
 // bridge contract
 const etherBridgeAddress = "0x9d593299cf32410045D114C3C18a68ACEECDD3f7";
-const etherBridge = new etherWeb3.eth.Contract(ethBridgeABI, etherBridgeAddress);
+const etherBridge = new ethWeb3.eth.Contract(ethBridgeABI, etherBridgeAddress);
 
 const bscBridgeAddress = "0xA2E1136d323896eD56F15ff85b9C73C6DdC98a96";
 const bscBridge = new bscWeb3.eth.Contract(bscBridgeABI, bscBridgeAddress);
@@ -71,6 +40,39 @@ const bscSpring = new bscWeb3.eth.Contract(seasonalABI, bscSpringAddr);
 const bscSummer = new bscWeb3.eth.Contract(seasonalABI, bscSummerAddr);
 const bscAutumn = new bscWeb3.eth.Contract(seasonalABI, bscAutumnAddr);
 const bscWinter = new bscWeb3.eth.Contract(seasonalABI, bscWinterAddr);
+
+app.use(express());
+app.use(cors());
+
+const port = parseInt(process.env.PORT || 3000);
+const server = app.listen(port, ()=> {
+  console.log(`Server running on port ${port}`);
+});
+
+let webSocket = null;
+try {
+  webSocket = socket(server, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST']
+    }
+  });
+  webSocket.on("connection", (socket) => {
+    socket.on('TestNetworkConnections', async () => {
+      try{
+        const ethSpring = new ethWeb3.eth.Contract(seasonalABI, etherSpringAddr);
+        const testEth = await ethSpring.methods.balanceOf(etherBridgeAddress).call();
+        const testBsc = await bscSpring.methods.balanceOf(bscBridgeAddress).call();
+        webSocket.emit('NetworksAreActive');
+      } catch(e) {
+        console.log('test network error:', e);
+        webSocket.emit('error', {error:e});
+      }
+    });
+  });
+} catch(e) {
+  console.log(e);
+}
 
 async function bscFinalizeSwap(result){
   const token = result.token;
@@ -114,12 +116,12 @@ async function bscFinalizeSwap(result){
     pvKey
   );
   try {
-      const success = await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      await bscWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
       console.log("Finished");
       webSocket.emit('Swap Finished');
   } catch (e) {
       console.log(e);
-      webSocket.emit('erro',{e});
+      webSocket.emit('error',{error: e});
   }
 
 }
@@ -150,7 +152,7 @@ async function etherFinalizeSwap(result){
   }
   const data = await etherBridge.methods.acceptSwapFromBsc(fromWallet, etherSeasonAddr, amount);
   const encodedABI = data.encodeABI();
-  const signedTx = await etherWeb3.eth.accounts.signTransaction(
+  const signedTx = await ethWeb3.eth.accounts.signTransaction(
     {
         from: myAccount,
         to: etherBridgeAddress,
@@ -161,12 +163,12 @@ async function etherFinalizeSwap(result){
     pvKey
   );
   try {
-      const success = await etherWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      await ethWeb3.eth.sendSignedTransaction(signedTx.rawTransaction);
       console.log("Finished");
       webSocket.emit('Swap Finished');
   } catch (e) {
       console.log(e);
-      webSocket.emit('erro', e);
+      webSocket.emit('error', {error: e});
   }
 }
 
