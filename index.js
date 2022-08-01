@@ -1,3 +1,6 @@
+const https = require("https");
+const fs = require('fs');
+
 const express = require("express");
 const app = express();
 
@@ -45,7 +48,7 @@ app.use(express());
 app.use(cors());
 
 const port = parseInt(process.env.PORT || 3000);
-const server = app.listen(port, ()=> {
+const server = https.createServer(app).listen(port, ()=> {
   console.log(`Server running on port ${port}`);
 });
 
