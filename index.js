@@ -48,8 +48,8 @@ app.use(express());
 app.use(cors());
 
 var options = {
-  key: fs.readFileSync('sslcert/server.key', 'utf8'),
-  cert: fs.readFileSync('sslcert/server.crt', 'utf8')
+  key: fs.readFileSync('selfsigned.key', 'utf8'),
+  cert: fs.readFileSync('selfsigned.crt', 'utf8')
 };
 
 const port = parseInt(process.env.PORT || 3000);
