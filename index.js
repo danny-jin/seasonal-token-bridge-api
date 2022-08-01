@@ -47,8 +47,13 @@ const bscWinter = new bscWeb3.eth.Contract(seasonalABI, bscWinterAddr);
 app.use(express());
 app.use(cors());
 
+var options = {
+  key: fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
+  cert: fs.readFileSync('test/fixtures/keys/agent2-cert.cert')
+};
+
 const port = parseInt(process.env.PORT || 3000);
-const server = https.createServer(app).listen(port, ()=> {
+const server = https.createServer(options, app).listen(port, ()=> {
   console.log(`Server running on port ${port}`);
 });
 
