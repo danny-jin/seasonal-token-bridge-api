@@ -48,13 +48,8 @@ app.use(express());
 app.use(cors());
 
 var options = {
-<<<<<<< HEAD
   key: fs.readFileSync('sslcert/server.key', 'utf8'),
   cert: fs.readFileSync('sslcert/server.crt', 'utf8')
-=======
-  key: fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
-  cert: fs.readFileSync('test/fixtures/keys/agent2-cert.cert')
->>>>>>> e40910b3467530e3693e3b223aa2a956758014e7
 };
 
 const port = parseInt(process.env.PORT || 3000);
